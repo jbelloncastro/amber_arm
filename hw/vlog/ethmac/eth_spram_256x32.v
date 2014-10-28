@@ -49,8 +49,8 @@ module eth_spram_256x32(
 	input  [3:0]    we,   // Write enable input, active high
 	input           oe,   // Output enable input, active high
 	input  [7:0]    addr, // address bus inputs
-	input  [31:0]   di,   // input data bus
-	output [31:0]   do    // output data bus
+	input  [31:0]   datain,   // input data bus
+	output [31:0]   dataout    // output data bus
 
 );
 
@@ -74,11 +74,11 @@ assign write_enable = ce & (|we);
     .ADDRESS_WIDTH  ( 8             )
 ) u_ram (
     .i_clk          ( clk           ),
-    .i_write_data   ( di            ),
+    .i_write_data   ( datain            ),
     .i_write_enable ( write_enable  ),
     .i_address      ( addr          ),
     .i_byte_enable  ( we            ),
-    .o_read_data    ( do            )
+    .o_read_data    ( dataout            )
 );
 
 

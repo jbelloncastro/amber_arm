@@ -82,12 +82,14 @@
 `define TB_ERROR_MESSAGE        $display("\nFATAL ERROR in %m @ tick %8d", `U_TB.clk_count ); force `U_TB.testfail = 1'd1;
 
 
-`ifdef XILINX_FPGA
+// We won't be running this on a xilinx fpga
+//`ifdef XILINX_FPGA
 // Full DDR3 memory Model
-`define U_RAM                tb.u_ddr3_model_c3.memory
-`else
+//`define U_RAM                tb.u_ddr3_model_c3.memory
+//`else
+
 // Simplified Main Memory Model
 `define U_RAM                tb.u_system.u_main_mem.ram
-`endif
+//`endif
 
 `endif

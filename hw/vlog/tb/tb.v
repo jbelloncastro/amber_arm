@@ -469,6 +469,7 @@ dumpvcd u_dumpvcd();
 // ======================================
 // Terminate Test  
 // ======================================
+
 `ifdef AMBER_A25_CORE
     `include "a25_localparams.v"
     `include "a25_functions.v"

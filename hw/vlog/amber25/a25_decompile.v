@@ -72,7 +72,7 @@ wire    [3:0]          reg_n, reg_d, reg_m, reg_s;
 wire    [4:0]          shift_imm;
 wire    [3:0]          opcode;
 wire    [3:0]          condition;
-wire    [3:0]          type;
+wire    [3:0]          sigtype;
 wire                   opcode_compare;
 wire                   opcode_move;
 wire                   no_shift;
@@ -149,7 +149,7 @@ assign opcode_move =
             opcode == MOV || 
             opcode == MVN ;
             
-assign shift_op_imm = type == REGOP && execute_instruction[25] == 1'd1;
+assign shift_op_imm = sigtype == REGOP && execute_instruction[25] == 1'd1;
 
 assign imm32 =  execute_instruction[11:8] == 4'h0 ? {            24'h0, imm8[7:0] } :
                 execute_instruction[11:8] == 4'h1 ? { imm8[1:0], 24'h0, imm8[7:2] } :
@@ -173,7 +173,7 @@ assign imm32 =  execute_instruction[11:8] == 4'h0 ? {            24'h0, imm8[7:0
 // Instruction decode
 // ========================================================
 // the order of these matters
-assign type = 
+assign sigtype = 
     {execute_instruction[27:23], execute_instruction[21:20], execute_instruction[11:4] } == { 5'b00010, 2'b00, 8'b00001001 } ? SWAP     :  // Before REGOP
     {execute_instruction[27:22], execute_instruction[7:4]                              } == { 6'b000000, 4'b1001           } ? MULT     :  // Before REGOP
     {execute_instruction[27:26]                                                        } == { 2'b00                        } ? REGOP    :    
@@ -190,16 +190,16 @@ assign type =
 // Convert some important signals to ASCII
 // so their values can easily be displayed on a waveform viewer
 //
-assign TYPE_NAME    = type == REGOP    ? "REGOP   " :
-                      type == MULT     ? "MULT    " :
-                      type == SWAP     ? "SWAP    " :
-                      type == TRANS    ? "TRANS   " : 
-                      type == MTRANS   ? "MTRANS  " : 
-                      type == BRANCH   ? "BRANCH  " : 
-                      type == CODTRANS ? "CODTRANS" : 
-                      type == COREGOP  ? "COREGOP " : 
-                      type == CORTRANS ? "CORTRANS" : 
-                      type == SWI      ? "SWI     " : 
+assign TYPE_NAME    = sigtype == REGOP    ? "REGOP   " :
+                      sigtype == MULT     ? "MULT    " :
+                      sigtype == SWAP     ? "SWAP    " :
+                      sigtype == TRANS    ? "TRANS   " : 
+                      sigtype == MTRANS   ? "MTRANS  " : 
+                      sigtype == BRANCH   ? "BRANCH  " : 
+                      sigtype == CODTRANS ? "CODTRANS" : 
+                      sigtype == COREGOP  ? "COREGOP " : 
+                      sigtype == CORTRANS ? "CORTRANS" : 
+                      sigtype == SWI      ? "SWI     " : 
                                          "UNKNOWN " ;
                                            
 
@@ -211,40 +211,40 @@ always @*
         xINSTRUCTION_EXECUTE =  xINSTRUCTION_EXECUTE_R; 
         end // stalled
 
-    else if ( type == REGOP    && opcode == ADC                                                          ) xINSTRUCTION_EXECUTE = "adc  ";
-    else if ( type == REGOP    && opcode == ADD                                                          ) xINSTRUCTION_EXECUTE = "add  ";
-    else if ( type == REGOP    && opcode == AND                                                          ) xINSTRUCTION_EXECUTE = "and  ";
-    else if ( type == BRANCH   && execute_instruction[24] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "b    ";
-    else if ( type == REGOP    && opcode == BIC                                                          ) xINSTRUCTION_EXECUTE = "bic  ";
-    else if ( type == BRANCH   && execute_instruction[24] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "bl   ";
-    else if ( type == COREGOP                                                                            ) xINSTRUCTION_EXECUTE = "cdp  ";
-    else if ( type == REGOP    && opcode == CMN                                                          ) xINSTRUCTION_EXECUTE = "cmn  ";
-    else if ( type == REGOP    && opcode == CMP                                                          ) xINSTRUCTION_EXECUTE = "cmp  ";
-    else if ( type == REGOP    && opcode == EOR                                                          ) xINSTRUCTION_EXECUTE = "eor  ";
-    else if ( type == CODTRANS && execute_instruction[20] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "ldc  ";
-    else if ( type == MTRANS   && execute_instruction[20] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "ldm  ";
-    else if ( type == TRANS    && {execute_instruction[22],execute_instruction[20]}    == {1'b0, 1'b1}   ) xINSTRUCTION_EXECUTE = "ldr  ";
-    else if ( type == TRANS    && {execute_instruction[22],execute_instruction[20]}    == {1'b1, 1'b1}   ) xINSTRUCTION_EXECUTE = "ldrb ";
-    else if ( type == CORTRANS && execute_instruction[20] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "mcr  ";
-    else if ( type == MULT     && execute_instruction[21] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "mla  ";
-    else if ( type == REGOP    && opcode == MOV                                                          ) xINSTRUCTION_EXECUTE = "mov  ";
-    else if ( type == CORTRANS && execute_instruction[20] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "mrc  ";
-    else if ( type == MULT     && execute_instruction[21] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "mul  ";
-    else if ( type == REGOP    && opcode == MVN                                                          ) xINSTRUCTION_EXECUTE = "mvn  ";
-    else if ( type == REGOP    && opcode == ORR                                                          ) xINSTRUCTION_EXECUTE = "orr  ";
-    else if ( type == REGOP    && opcode == RSB                                                          ) xINSTRUCTION_EXECUTE = "rsb  ";
-    else if ( type == REGOP    && opcode == RSC                                                          ) xINSTRUCTION_EXECUTE = "rsc  ";
-    else if ( type == REGOP    && opcode == SBC                                                          ) xINSTRUCTION_EXECUTE = "sbc  ";
-    else if ( type == CODTRANS && execute_instruction[20] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "stc  ";
-    else if ( type == MTRANS   && execute_instruction[20] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "stm  ";
-    else if ( type == TRANS    && {execute_instruction[22],execute_instruction[20]}    == {1'b0, 1'b0}   ) xINSTRUCTION_EXECUTE = "str  ";
-    else if ( type == TRANS    && {execute_instruction[22],execute_instruction[20]}    == {1'b1, 1'b0}   ) xINSTRUCTION_EXECUTE = "strb ";
-    else if ( type == REGOP    && opcode == SUB                                                          ) xINSTRUCTION_EXECUTE = "sub  ";  
-    else if ( type == SWI                                                                                ) xINSTRUCTION_EXECUTE = "swi  ";  
-    else if ( type == SWAP     && execute_instruction[22] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "swp  ";  
-    else if ( type == SWAP     && execute_instruction[22] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "swpb ";  
-    else if ( type == REGOP    && opcode == TEQ                                                          ) xINSTRUCTION_EXECUTE = "teq  ";  
-    else if ( type == REGOP    && opcode == TST                                                          ) xINSTRUCTION_EXECUTE = "tst  ";  
+    else if ( sigtype == REGOP    && opcode == ADC                                                          ) xINSTRUCTION_EXECUTE = "adc  ";
+    else if ( sigtype == REGOP    && opcode == ADD                                                          ) xINSTRUCTION_EXECUTE = "add  ";
+    else if ( sigtype == REGOP    && opcode == AND                                                          ) xINSTRUCTION_EXECUTE = "and  ";
+    else if ( sigtype == BRANCH   && execute_instruction[24] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "b    ";
+    else if ( sigtype == REGOP    && opcode == BIC                                                          ) xINSTRUCTION_EXECUTE = "bic  ";
+    else if ( sigtype == BRANCH   && execute_instruction[24] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "bl   ";
+    else if ( sigtype == COREGOP                                                                            ) xINSTRUCTION_EXECUTE = "cdp  ";
+    else if ( sigtype == REGOP    && opcode == CMN                                                          ) xINSTRUCTION_EXECUTE = "cmn  ";
+    else if ( sigtype == REGOP    && opcode == CMP                                                          ) xINSTRUCTION_EXECUTE = "cmp  ";
+    else if ( sigtype == REGOP    && opcode == EOR                                                          ) xINSTRUCTION_EXECUTE = "eor  ";
+    else if ( sigtype == CODTRANS && execute_instruction[20] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "ldc  ";
+    else if ( sigtype == MTRANS   && execute_instruction[20] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "ldm  ";
+    else if ( sigtype == TRANS    && {execute_instruction[22],execute_instruction[20]}    == {1'b0, 1'b1}   ) xINSTRUCTION_EXECUTE = "ldr  ";
+    else if ( sigtype == TRANS    && {execute_instruction[22],execute_instruction[20]}    == {1'b1, 1'b1}   ) xINSTRUCTION_EXECUTE = "ldrb ";
+    else if ( sigtype == CORTRANS && execute_instruction[20] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "mcr  ";
+    else if ( sigtype == MULT     && execute_instruction[21] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "mla  ";
+    else if ( sigtype == REGOP    && opcode == MOV                                                          ) xINSTRUCTION_EXECUTE = "mov  ";
+    else if ( sigtype == CORTRANS && execute_instruction[20] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "mrc  ";
+    else if ( sigtype == MULT     && execute_instruction[21] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "mul  ";
+    else if ( sigtype == REGOP    && opcode == MVN                                                          ) xINSTRUCTION_EXECUTE = "mvn  ";
+    else if ( sigtype == REGOP    && opcode == ORR                                                          ) xINSTRUCTION_EXECUTE = "orr  ";
+    else if ( sigtype == REGOP    && opcode == RSB                                                          ) xINSTRUCTION_EXECUTE = "rsb  ";
+    else if ( sigtype == REGOP    && opcode == RSC                                                          ) xINSTRUCTION_EXECUTE = "rsc  ";
+    else if ( sigtype == REGOP    && opcode == SBC                                                          ) xINSTRUCTION_EXECUTE = "sbc  ";
+    else if ( sigtype == CODTRANS && execute_instruction[20] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "stc  ";
+    else if ( sigtype == MTRANS   && execute_instruction[20] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "stm  ";
+    else if ( sigtype == TRANS    && {execute_instruction[22],execute_instruction[20]}    == {1'b0, 1'b0}   ) xINSTRUCTION_EXECUTE = "str  ";
+    else if ( sigtype == TRANS    && {execute_instruction[22],execute_instruction[20]}    == {1'b1, 1'b0}   ) xINSTRUCTION_EXECUTE = "strb ";
+    else if ( sigtype == REGOP    && opcode == SUB                                                          ) xINSTRUCTION_EXECUTE = "sub  ";  
+    else if ( sigtype == SWI                                                                                ) xINSTRUCTION_EXECUTE = "swi  ";  
+    else if ( sigtype == SWAP     && execute_instruction[22] == 1'b0                                        ) xINSTRUCTION_EXECUTE = "swp  ";  
+    else if ( sigtype == SWAP     && execute_instruction[22] == 1'b1                                        ) xINSTRUCTION_EXECUTE = "swpb ";  
+    else if ( sigtype == REGOP    && opcode == TEQ                                                          ) xINSTRUCTION_EXECUTE = "teq  ";  
+    else if ( sigtype == REGOP    && opcode == TST                                                          ) xINSTRUCTION_EXECUTE = "tst  ";  
     else                                                                                                   xINSTRUCTION_EXECUTE = "unkow";  
     end
 
@@ -312,7 +312,7 @@ always @( posedge i_clk )
             if (!i_instruction_execute)
                 begin
                 $fwrite(decompile_file,"-");
-                if ( type == SWI )
+                if ( sigtype == SWI )
                     $display ("Cycle %09d  SWI not taken *************", `U_TB.clk_count);
                 end
             else     
@@ -331,22 +331,22 @@ always @( posedge i_clk )
 
             fchars = 8 - numchars(xINSTRUCTION_EXECUTE);
         
-            // Print the Multiple transfer type
-            if (type   == MTRANS )
+            // Print the Multiple transfer sigtype
+            if (sigtype   == MTRANS )
                 begin
                 w_mtrans_type;           
                 fchars = fchars - 2;
                 end
 
             // Print the s bit
-           if ( ((type == REGOP && !opcode_compare) || type == MULT ) && s_bit == 1'b1 )
+           if ( ((sigtype == REGOP && !opcode_compare) || sigtype == MULT ) && s_bit == 1'b1 )
                 begin
                 $fwrite(decompile_file,"s");
                 fchars = fchars - 1;
                 end
 
             // Print the p bit
-           if ( type == REGOP && opcode_compare && s_bit == 1'b1 && reg_d == 4'd15 )
+           if ( sigtype == REGOP && opcode_compare && s_bit == 1'b1 && reg_d == 4'd15 )
                 begin
                 $fwrite(decompile_file,"p");
                 fchars = fchars - 1;
@@ -376,7 +376,7 @@ always @( posedge i_clk )
             // ========================================
             // print the arguments for the instruction
             // ========================================
-            case ( type )
+            case ( sigtype )
                 REGOP:     regop_args;
                 TRANS:     trans_args;
                 MTRANS:    mtrans_args;
@@ -408,7 +408,7 @@ always @( posedge i_clk )
             end
             
         // Software Interrupt  
-        if ( i_instruction_execute && type == SWI )    
+        if ( i_instruction_execute && sigtype == SWI )    
             begin
             $fwrite( decompile_file,"%09d              interrupt swi", `U_TB.clk_count );
             $fwrite( decompile_file,", return addr " );
@@ -434,7 +434,7 @@ always @( posedge i_clk )
                 3'd3:    $fwrite( decompile_file,"irq" );
                 3'd4:    $fwrite( decompile_file,"address exception" );
                 3'd5:    $fwrite( decompile_file,"instruction abort" );
-                default: $fwrite( decompile_file,"unknown type" );
+                default: $fwrite( decompile_file,"unknown sigtype" );
             endcase
             $fwrite( decompile_file,", return addr " );
             
@@ -461,7 +461,7 @@ always @( posedge i_clk )
              i_instruction_execute && 
              i_interrupt == 3'd0 &&
              !execute_undefined &&
-             type != SWI &&
+             sigtype != SWI &&
              execute_address != get_32bit_signal(0)  // Don't print jump to same address
              )
             begin
@@ -502,7 +502,7 @@ task wcond;
     end
 endtask
 
-// ldm and stm types
+// ldm and stm sigtypes
 task w_mtrans_type;
     begin
     case( mtrans_type )

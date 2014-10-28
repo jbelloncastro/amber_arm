@@ -62,7 +62,7 @@
 // --------------------------------------------------------------------
 
 // Enable the decompiler. The default output file is amber.dis
-`define A25_DECOMPILE
+//`define A25_DECOMPILE
 
 // Co-processor 15 debug. Registers in here control the cache
 //`define A25_COPRO15_DEBUG
