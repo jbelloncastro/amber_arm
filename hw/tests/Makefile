@@ -43,7 +43,7 @@
 DEP      += ../../sw/include/amber_registers.h
 
 TEST            ?= add
-AMBER_CROSSTOOL ?= amber-crosstool-not-defined
+AMBER_CROSSTOOL ?= ~/x-tools/arm-unknown-linux-gnueabi/bin/arm-unknown-linux-gnueabi
 TOOLSPATH        = ../../sw/tools
 
  TGT    = $(addsuffix .elf,            $(basename $(TEST)))

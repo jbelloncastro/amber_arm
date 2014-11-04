@@ -38,6 +38,8 @@
 // from http://www.opencores.org/lgpl.shtml                     //
 //                                                              //
 //////////////////////////////////////////////////////////////////
+`timescale  1 ps / 1 ps
+
 `include "system_config_defines.v"
 
 

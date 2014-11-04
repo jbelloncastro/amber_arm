@@ -37,7 +37,7 @@
 // from http://www.opencores.org/lgpl.shtml                     //
 //                                                              //
 //////////////////////////////////////////////////////////////////
-
+`include "a25_localparams.v"
 
 // ========================================================
 // Instruction type decode

@@ -39,7 +39,7 @@
 // from http://www.opencores.org/lgpl.shtml                     //
 //                                                              //
 //////////////////////////////////////////////////////////////////
-
+`include "system_config_defines.v"
 
 module system
 (

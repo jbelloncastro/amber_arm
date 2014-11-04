@@ -38,7 +38,8 @@
 // from http://www.opencores.org/lgpl.shtml                     //
 //                                                              //
 //////////////////////////////////////////////////////////////////
-
+`ifndef _25_LOCALPARAMS
+`define _25_LOCALPARAMS
 
 // Instruction Types
 localparam [3:0]    REGOP       = 4'h0, // Data processing
@@ -114,4 +115,4 @@ localparam [5:0] OH_USR  = 0,
                  OH_FIRQ = 2,
                  OH_SVC  = 3;
 
-
+`endif

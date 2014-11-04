@@ -39,6 +39,8 @@
 // from http://www.opencores.org/lgpl.shtml                     //
 //                                                              //
 //////////////////////////////////////////////////////////////////
+`timescale  1 ps / 1 ps
+
 `include "global_defines.v"
 `include "a25_config_defines.v"
 

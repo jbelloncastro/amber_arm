@@ -1,0 +1,44 @@
+
+Memory Configuration
+
+Name             Origin             Length             Attributes
+*default*        0x0000000000000000 0xffffffffffffffff
+
+Linker script and memory map
+
+                0x0000000000000000                . = 0x0
+
+.text           0x0000000000000000       0xdc
+ *(.text)
+ .text          0x0000000000000000       0xdc add.o
+                0x0000000000000000                main
+
+.glue_7         0x00000000000000dc        0x0
+ .glue_7        0x00000000000000dc        0x0 add.o
+
+.glue_7t        0x00000000000000dc        0x0
+ .glue_7t       0x00000000000000dc        0x0 add.o
+
+.vfp11_veneer   0x00000000000000dc        0x0
+ .vfp11_veneer  0x00000000000000dc        0x0 add.o
+
+.v4_bx          0x00000000000000dc        0x0
+ .v4_bx         0x00000000000000dc        0x0 add.o
+
+.data           0x00000000000000dc        0x0
+ *(.data)
+ .data          0x00000000000000dc        0x0 add.o
+
+.bss            0x00000000000000dc        0x0
+ *(.bss)
+ .bss           0x00000000000000dc        0x0 add.o
+
+.stack          0x00000000000000dc        0x0
+                0x00000000000000dc                __stack = .
+LOAD add.o
+OUTPUT(add.elf elf32-littlearm)
+
+.ARM.attributes
+                0x0000000000000000       0x18
+ .ARM.attributes
+                0x0000000000000000       0x18 add.o

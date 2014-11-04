@@ -44,7 +44,7 @@
 
 // Select the A23 or A25 version of the core
 // You can also select the A25 core on the command line using the run script
-//`define AMBER_A25_CORE
+`define AMBER_A25_CORE
 
 
 // Frequency = 800 / AMBER_CLK_DIVIDER
@@ -77,19 +77,19 @@
 // --------------------------------------------------------------------
 
 // Add jitter to wishbone accesses
-//`define AMBER_WISHBONE_DEBUG
+`define AMBER_WISHBONE_DEBUG
 
 // Print UART debug messages
-//`define AMBER_UART_DEBUG
+`define AMBER_UART_DEBUG
 
 // Print Interrupt Controller debug messages
-//`define AMBER_IC_DEBUG
+`define AMBER_IC_DEBUG
 
 // Debug the loading of the memory file into memory
-//`define AMBER_LOAD_MEM_DEBUG
+`define AMBER_LOAD_MEM_DEBUG
 
 // Debug main memory interface
-// `define AMBER_MEMIF_DEBUG
+`define AMBER_MEMIF_DEBUG
 // --------------------------------------------------------------------
 
 
@@ -123,7 +123,7 @@
     `define AMBER_TEST_NAME         "add"
 `endif
 `ifndef MAIN_MEM_FILE
-    `define MAIN_MEM_FILE           "not-defined"
+    `define MAIN_MEM_FILE           "../tests/add.mem"
 `endif
 `ifndef BOOT_MEM_FILE
     `define BOOT_MEM_FILE           "../tests/add.mem"
