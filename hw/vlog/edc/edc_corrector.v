@@ -53,22 +53,18 @@ parameter WB_SWIDTH  = 4
 )(
 
 output      [WB_DWIDTH-1:0]    edcc_dat_r,
-output                         valid,
+output                         error,
 input       [WB_DWIDTH-1:0]    edcc_main_dat_w,
 input       [WB_DWIDTH-1:0]    edcc_ecc_dat_w
 
 );
 
-
-generate
  
 begin
 
-
+assign error = 1'b1;
+assign edcc_dat_r = edcc_main_dat_w;
 
 end
-
-endgenerate
-
 
 endmodule

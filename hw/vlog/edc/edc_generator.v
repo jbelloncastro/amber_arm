@@ -56,16 +56,11 @@ input       [WB_DWIDTH-1:0]    edcg_dat_w
 
 );
 
-
-generate
  
 begin
 
     assign edcg_dat_r = edcg_dat_w;
 
 end
-
-endgenerate
-
 
 endmodule

@@ -57,18 +57,19 @@ input                          edc_mem_ctrl,  // 0=128MB, 1=32MB
 // Wishbone Bus
 input       [31:0]             edc_wb_adr,
 input       [WB_SWIDTH-1:0]    edc_wb_sel,
-input       [WB_SWIDTH-1:0]    edc_wb_we,
+input                          edc_wb_we,
 output      [WB_DWIDTH-1:0]    edc_wb_dat_r,  // To Wishbone
 input       [WB_DWIDTH-1:0]    edc_wb_dat_w,  // From Wishbone
-input       [WB_DWIDTH-1:0]    edc_wb_cyc,
-input       [WB_DWIDTH-1:0]    edc_wb_stb,
-output      [WB_DWIDTH-1:0]    edc_wb_ack,
-output      [WB_DWIDTH-1:0]    edc_wb_err
+input                          edc_wb_cyc,
+input                          edc_wb_stb,
+output                         edc_wb_ack,
+output                         edc_wb_err
 
 );
 
-assign phy_init_done = 1'd1;
-
+wire main_mem_err;
+wire ecc_mem_err;
+wire corrector_err;
 
 // ======================================
 // Instantiate Main Memory
@@ -83,13 +84,13 @@ u_main_mem (
   .i_mem_ctrl             ( edc_mem_ctrl                ),
   .i_wb_adr               ( edc_wb_adr                  ),
   .i_wb_sel               ( edc_wb_sel                  ),
-  .i_wb_we                ( edc_wb_we   [2]             ),
+  .i_wb_we                ( edc_wb_we                   ),
   .o_wb_dat               ( corrector.edcc_main_dat_w   ), // To Corrector input
   .i_wb_dat               ( edc_wb_dat_w                ), // From Wishbone
-  .i_wb_cyc               ( edc_wb_cyc  [2]             ),
-  .i_wb_stb               ( edc_wb_stb  [2]             ),
-  .o_wb_ack               ( edc_wb_ack  [2]             ),
-  .o_wb_err               ( edc_wb_err  [2]             )
+  .i_wb_cyc               ( edc_wb_cyc                  ),
+  .i_wb_stb               ( edc_wb_stb                  ),
+  .o_wb_ack               ( edc_wb_ack                  ),
+  .o_wb_err               ( main_mem_err                )
 );
 
 
@@ -120,13 +121,13 @@ ecc_mem (
   .i_mem_ctrl             ( edc_mem_ctrl              ),
   .i_wb_adr               ( edc_wb_adr                ),
   .i_wb_sel               ( edc_wb_sel                ),
-  .i_wb_we                ( edc_wb_we   [2]           ),
+  .i_wb_we                ( edc_wb_we                 ),
   .o_wb_dat               ( corrector.edcc_ecc_dat_w  ),  // To Corrector input
   .i_wb_dat               ( generator.edcg_dat_r      ),  // From Generator output
-  .i_wb_cyc               ( edc_wb_cyc  [2]           ),
-  .i_wb_stb               ( edc_wb_stb  [2]           ),
-  .o_wb_ack               ( edc_wb_ack  [2]           ),
-  .o_wb_err               ( edc_wb_err  [2]           )
+  .i_wb_cyc               ( edc_wb_cyc                ),
+  .i_wb_stb               ( edc_wb_stb                ),
+  .o_wb_ack               ( /*edc_wb_ack*/            ),
+  .o_wb_err               ( ecc_mem_err                )
 );
 
 
@@ -140,19 +141,15 @@ edcc_mod #(
 )
 corrector (
   .edcc_dat_r               ( edc_wb_dat_r            ),  // To Wishbone
+  .error                    ( corrector_err           ),
   .edcc_main_dat_w          ( u_main_mem.o_wb_dat     ),  // From Main Memory output
   .edcc_ecc_dat_w           ( ecc_mem.o_wb_dat        )   // From ECC Memory output
 );
-
-
-
-generate
  
 begin
 
+assign edc_wb_err = corrector_err | ecc_mem_err | main_mem_err;
+
 end
-
-endgenerate
-
 
 endmodule
