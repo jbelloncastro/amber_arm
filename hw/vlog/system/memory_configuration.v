@@ -47,7 +47,8 @@ localparam MAIN_MSB             = 26;
 localparam BOOT_MSB             = 13;  
 
 localparam MAIN_BASE            = 32'h0000_0000; /*  Main Memory            */
-localparam BOOT_BASE            = 32'h0000_0000; /*  Cachable Boot Memory   */
+/* Changed from 32'h0000_0000 to no overlap main memory */
+localparam BOOT_BASE            = 32'h2800_0000; /*  Cachable Boot Memory   */
 localparam AMBER_TM_BASE        = 16'h1300;      /*  Timers Module          */
 localparam AMBER_IC_BASE        = 16'h1400;      /*  Interrupt Controller   */
 localparam AMBER_UART0_BASE     = 16'h1600;      /*  UART 0                 */

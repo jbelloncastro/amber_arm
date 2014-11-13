@@ -189,7 +189,8 @@ wire                    master_stb;
 wire [WB_DWIDTH-1:0]    master_rdat;
 wire                    master_ack;
 wire                    master_err;
-   
+
+reg             status_set     = 'd0; // used to terminate tests  
    
 // Arbitrate between m0 and m1. Ethmac (m0) always gets priority
 assign next_master    = i_m0_wb_cyc ? 1'd0 : 1'd1;
@@ -340,6 +341,13 @@ assign o_m0_wb_err  = current_master  ? 1'd0 : master_err ;
 assign o_m1_wb_dat  = master_rdat;
 assign o_m1_wb_ack  = current_master  ?  master_ack : 1'd0 ;
 assign o_m1_wb_err  = current_master  ?  master_err : 1'd0 ;
+
+// ======================================
+// Status Write
+// ======================================
+always @( posedge i_wb_clk )
+    if ( o_m1_wb_err )
+        status_set <= 1'd1;  
 
 endmodule
 

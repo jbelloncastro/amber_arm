@@ -666,7 +666,7 @@ u_wishbone_arbiter (
     .o_m0_wb_err            ( m_wb_err   [0]    ),
 
 
-    // WISHBONE master 1 - Amber Process or
+    // WISHBONE master 1 - Amber Processor
     .i_m1_wb_adr            ( m_wb_adr   [1]    ),
     .i_m1_wb_sel            ( m_wb_sel   [1]    ),
     .i_m1_wb_we             ( m_wb_we    [1]    ),

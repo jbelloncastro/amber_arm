@@ -481,6 +481,9 @@ reg             testfail;
 wire            test_status_set;
 wire [31:0]     test_status_reg;
 
+/* Add system status */
+wire            system_status_set;
+
 initial
     begin
     testfail  = 1'd0;
@@ -489,9 +492,11 @@ initial
 assign test_status_set = `U_TEST_MODULE.test_status_set;
 assign test_status_reg = `U_TEST_MODULE.test_status_reg;
 
+assign system_status_set = `U_ARBITER.status_set;
+
 always @*
         begin
-        if ( test_status_set || testfail )
+        if ( system_status_set || test_status_set || testfail )
             begin
             if ( test_status_reg == 32'd17 && !testfail )
                 begin
@@ -514,6 +519,15 @@ always @*
                     $finish;
                     end
                 else
+                  if( system_status_set )
+                    begin
+                    $display("++++++++++++++++++++");
+                    $write("Failed %s - EDC has detected a memory error\n", `AMBER_TEST_NAME);
+                    $display("++++++++++++++++++++");
+                    $fwrite(`U_TB.log_file,"Failed %s - EDC has detected a memory error\n", `AMBER_TEST_NAME);
+                    $finish;                    
+                    end  
+                  else                               
                     begin
                     $display("++++++++++++++++++++");
                     if (test_status_reg >= 32'h8000)

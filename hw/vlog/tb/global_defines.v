@@ -66,6 +66,9 @@
 `define U_L2CACHE               `U_SYSTEM.u_l2cache
 `define U_TEST_MODULE           `U_SYSTEM.u_test_module
 
+/* Add Wishbone Arbiter */
+`define U_ARBITER               `U_SYSTEM.u_wishbone_arbiter
+
 `ifdef AMBER_A25_CORE
     `define U_MEM               `U_AMBER.u_mem
     `define U_DCACHE            `U_MEM.u_dcache
@@ -87,7 +90,7 @@
 `define U_RAM                tb.u_ddr3_model_c3.memory
 `else
 // Simplified Main Memory Model
-`define U_RAM                tb.u_system.edc.u_main_mem.ram
+`define U_RAM                `U_SYSTEM.edc.u_main_mem.ram
 `endif
 
 `endif
