@@ -44,20 +44,21 @@
 //                                                              //
 //////////////////////////////////////////////////////////////////
 
-module edcc_mod (OD, UE, ED, S, ID);
+module edcc_mod (
+  
+input   [31:0]  ID,
+input   [7:0]   S,
+output  [31:0]  OD,
+output          UE,
+output          ED
 
-  input[0:31]   ID;
-  input[0:7]    S;
-  output[0:31]  OD;
-  output UE;
-  output ED;
+);
 
-  wire[0:31]    E;
-  wire          NC; // No correction
-  wire[0:15]    XA;
-  wire[0:7]     XB, XC, XD, XE, F, G, H, T, W;
-  wire[0:4]     S0B, S1B, S2B, S3B, S4B, S5B, S6B, S7B;
-  wire[0:1]     U;
+wire  [31:0]  E;
+wire          NC; // No correction
+wire  [7:0]   T, W;
+wire  [4:0]   S0B, S1B, S2B, S3B, S4B, S5B, S6B, S7B;
+wire  [1:0]   U;
 
 or ED0(ED, S[0], S[1], S[2], S[3], S[4], S[5], S[6], S[7]);
 

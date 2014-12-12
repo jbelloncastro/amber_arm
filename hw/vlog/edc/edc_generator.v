@@ -44,15 +44,17 @@
 //////////////////////////////////////////////////////////////////
 
 
-module edcg_mod (S, R, IC, ID);
+module edcg_mod #() (
 
-  input[0:31]   ID;
-  input[0:7]    IC;
-  input         R;
-  output[0:7]   S;
+input   [31:0]  ID,
+input   [7:0]   IC,
+input           R,
+output  [7:0]   S
+
+);
   
-  wire[0:15]    XA;
-  wire[0:7]     XB, XC, XD, XE, F, G, H;
+wire    [15:0]    XA;
+wire    [7:0]     XB, XC, XD, XE, F, G, H;
 
 xor XA0(XA[0], ID[0], ID[1]);
 xor XA1(XA[1], ID[2], ID[3]);

@@ -69,7 +69,6 @@ output                         edc_wb_err
 
 wire main_mem_err;
 wire ecc_mem_err;
-wire corrector_err;
 
 wire [WB_DWIDTH-1:0] umain_read_data;
 
@@ -87,7 +86,7 @@ u_main_mem (
   .i_wb_adr               ( edc_wb_adr                  ),
   .i_wb_sel               ( edc_wb_sel                  ),
   .i_wb_we                ( edc_wb_we                   ),
-  .o_wb_dat               ( umain_read_data                   ), // To Corrector input
+  .o_wb_dat               ( umain_read_data             ), // To Corrector
   .i_wb_dat               ( edc_wb_dat_w                ), // From Wishbone
   .i_wb_cyc               ( edc_wb_cyc                  ),
   .i_wb_stb               ( edc_wb_stb                  ),
@@ -103,20 +102,20 @@ reg [31:0] generator_data_in;
 wire [7:0] syndrome_ecc;
 
 
-always@( edc_wb_we or edc_wb_dat_w or umain_read_data) 
+always@(edc_wb_we or edc_wb_dat_w or umain_read_data) 
 begin
   case(edc_wb_we)
-      'b1: generator_data_in = edc_wb_dat_w;
-      default: generator_data_in = umain_read_data;
+      'b1: generator_data_in = edc_wb_dat_w;                // From Wishbone
+      default: generator_data_in = umain_read_data[31:0];   // From Main Memory
   endcase
 end
 
 
 edcg_mod generator (
-  .S                      ( syndrome_ecc      ),
-  .R                      ( ~edc_wb_we        ),
-  .IC                     ( ecc_mem.o_wb_dat  ),
-  .ID                     ( generator_data_in )
+  .S                      ( syndrome_ecc      ),  // To Corrector and ECC Memory
+  .R                      ( ~edc_wb_we        ),  
+  .IC                     ( ecc_mem.o_wb_dat  ),  // From ECC Memory
+  .ID                     ( generator_data_in )   // From multiplexor
 );
 
 
@@ -134,12 +133,12 @@ ecc_mem (
   .i_wb_adr               ( edc_wb_adr                ),
   .i_wb_sel               ( edc_wb_sel                ),
   .i_wb_we                ( edc_wb_we                 ),
-  .o_wb_dat               ( generator.IC              ),   
-  .i_wb_dat               ( syndrome_ecc              ),  // From Generator output
+  .o_wb_dat               ( generator.IC              ),  // To Generator   
+  .i_wb_dat               ( syndrome_ecc              ),  // From Generator
   .i_wb_cyc               ( edc_wb_cyc                ),
   .i_wb_stb               ( edc_wb_stb                ),
   .o_wb_ack               ( /*edc_wb_ack*/            ),
-  .o_wb_err               ( ecc_mem_err                )
+  .o_wb_err               ( ecc_mem_err               )
 );
 
 
@@ -147,11 +146,17 @@ ecc_mem (
 // Instantiate EDC Corrector
 // ======================================
 
+wire [31:0] corrector_output;
+
+assign edc_wb_dat_r[WB_DWIDTH-1:32] = umain_read_data[WB_DWIDTH-1:32];
+assign edc_wb_dat_r[31:0] =  corrector_output;
+
 edcc_mod corrector (
-  .OD                      ( edc_wb_dat_r             ),
-  .UE                      ( edc_wb_err               ), 
-  .ED                      (                          ), 
-  .S                       ( syndrome_ecc             ), 
-  .ID                      ( umain_data_read          ));
+  .OD                      ( corrector_output         ),  // To Wishbone
+  .UE                      ( edc_wb_err               ),  // To Wishbone
+  .ED                      (                          ),  // Discarded
+  .S                       ( syndrome_ecc             ),  // From Generator
+  .ID                      ( umain_read_data[31:0]    )   // From Main Memory
+); 
 
 endmodule
