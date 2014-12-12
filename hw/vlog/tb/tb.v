@@ -65,6 +65,7 @@ integer                 main_mem_file;
 reg     [31:0]          main_mem_file_address;
 reg     [31:0]          main_mem_file_data;
 reg     [127:0]         main_mem_file_data_128;
+reg [31:0]              ecc_mem_file_ecc_32;
 integer                 main_mem_line_count;
 reg     [22:0]          mm_ddr3_addr;
 `endif
@@ -446,10 +447,20 @@ always @ ( posedge `U_SYSTEM.sys_clk )
                                 insert_32_into_128 ( main_mem_file_address[3:2], 
                                                      main_mem_file_data_128, 
                                                      main_mem_file_data );
-
+                            
+                            //`U_ECC_MEM [main_mem_file_address[31:4]] = 0;
+                            ecc_mem_file_ecc_32 = `U_ECC_MEM [main_mem_file_address[31:4]];
+                            `U_ECC_MEM [main_mem_file_address[31:4]] = 
+                                insert_8_into_32 (main_mem_file_address[3:2],
+                                                  ecc_mem_file_ecc_32,
+                                                  ecc40_32(main_mem_file_data));
+                           
+ 
                             `ifdef AMBER_LOAD_MEM_DEBUG
                                 $display ("Load RAM: PAddr: 0x%08x, Data 0x%08x", 
                                            main_mem_file_address, main_mem_file_data);
+                                $display ("Load ECC: PAddr: 0x%08x, Data 0x%08x", 
+                                           main_mem_file_address, `U_ECC_MEM [main_mem_file_address[31:4]] );
                             `endif   
                         
                         `endif
@@ -633,6 +644,33 @@ begin
 end
 endfunction
 
+function [31:0] insert_8_into_32;
+input [1:0]  pos;
+input [31:0] word32;
+input [7:0]  word8;
+begin
+     case (pos)
+         2'd0: insert_8_into_32 = {word32[31:8], word8};
+         2'd1: insert_8_into_32 = {word32[31:16], word8, word32[7:0]};
+         2'd2: insert_8_into_32 = {word32[31:24], word8, word32[15:0]};
+         2'd3: insert_8_into_32 = {word8, word32[23:0]};
+     endcase
+end
+endfunction
+
+
+function [7:0] ecc40_32;
+  input [31:0] data;
+begin
+   ecc40_32[7] = ^ (data & 32'b1000_1000_1000_1000_1111_1111_0000_0000);
+   ecc40_32[6] = ^ (data & 32'b0100_0100_0100_0100_0000_0000_1111_1111);
+   ecc40_32[5] = ^ (data & 32'b0010_0010_0010_0010_1111_0000_1111_0000);
+   ecc40_32[4] = ^ (data & 32'b0001_0001_0001_0001_0000_1111_0000_1111);
+   ecc40_32[3] = ^ (data & 32'b1111_1111_0000_0000_1000_1000_1000_1000);
+   ecc40_32[2] = ^ (data & 32'b0000_0000_1111_1111_0100_0100_0100_0100);
+   ecc40_32[1] = ^ (data & 32'b1111_0000_1111_0000_0010_0010_0010_0010);
+   ecc40_32[0] = ^ (data & 32'b0000_1111_0000_1111_0001_0001_0001_0001);
+end
+endfunction
 
 endmodule
-

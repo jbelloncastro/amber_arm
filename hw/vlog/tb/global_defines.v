@@ -90,7 +90,9 @@
 `define U_RAM                tb.u_ddr3_model_c3.memory
 `else
 // Simplified Main Memory Model
-`define U_RAM                `U_SYSTEM.edc.u_main_mem.ram
+  `define U_RAM                 `U_SYSTEM.edc.u_main_mem.ram
+  `define U_ECC_MEM             `U_SYSTEM.edc.ecc_mem.ram
+  `define U_EDC                 `U_SYSTEM.edc
 `endif
 
 `endif

@@ -98,33 +98,69 @@ u_main_mem (
 // ======================================
 // Instantiate EDC Generator
 // ======================================
-reg [31:0] generator_data_in;
-wire [7:0] syndrome_ecc;
+reg [31:0] generator_data_in[0:3];
+wire [7:0] syndrome_ecc[0:3];
 
 
 always@(edc_wb_we or edc_wb_dat_w or umain_read_data) 
 begin
   case(edc_wb_we)
-      'b1: generator_data_in = edc_wb_dat_w;                // From Wishbone
-      default: generator_data_in = umain_read_data[31:0];   // From Main Memory
+      'b1: begin
+          generator_data_in[0] = edc_wb_dat_w[31:0];// From Wishbone
+          generator_data_in[1] = edc_wb_dat_w[63:32];// From Wishbone
+          generator_data_in[2] = edc_wb_dat_w[95:64];// From Wishbone
+          generator_data_in[3] = edc_wb_dat_w[127:96];// From Wishbone
+    end
+      default: begin
+          generator_data_in[0] = umain_read_data[31:0];// From Main Memory
+          generator_data_in[1] = umain_read_data[63:32];// From Main Memory
+          generator_data_in[2] = umain_read_data[95:64];// From Main Memory
+          generator_data_in[3] = umain_read_data[127:96];// From Main Memory
+    end
   endcase
 end
 
 
-edcg_mod generator (
-  .S                      ( syndrome_ecc      ),  // To Corrector and ECC Memory
-  .R                      ( ~edc_wb_we        ),  
-  .IC                     ( ecc_mem.o_wb_dat  ),  // From ECC Memory
-  .ID                     ( generator_data_in )   // From multiplexor
+edcg_mod generator0 (
+  .S                      ( syndrome_ecc[0]      ),  // To Corrector and ECC Memory
+  .R                      ( ~edc_wb_we       ),  
+  .IC                     ( ecc_mem.o_wb_dat[7:0]  ),  // From ECC Memory
+  .ID                     ( generator_data_in[0] )   // From multiplexor
 );
 
+edcg_mod generator1 (
+  .S                      ( syndrome_ecc[1]      ),  // To Corrector and ECC Memory
+  .R                      ( ~edc_wb_we       ),  
+  .IC                     ( ecc_mem.o_wb_dat[15:8]  ),  // From ECC Memory
+  .ID                     ( generator_data_in[1] )   // From multiplexor
+);
+
+edcg_mod generator2 (
+  .S                      ( syndrome_ecc[2]      ),  // To Corrector and ECC Memory
+  .R                      ( ~edc_wb_we       ),  
+  .IC                     ( ecc_mem.o_wb_dat[23:16]  ),  // From ECC Memory
+  .ID                     ( generator_data_in[2] )   // From multiplexor
+);
+
+edcg_mod generator3 (
+  .S                      ( syndrome_ecc[3]      ),  // To Corrector and ECC Memory
+  .R                      ( ~edc_wb_we       ),  
+  .IC                     ( ecc_mem.o_wb_dat[31:24]  ),  // From ECC Memory
+  .ID                     ( generator_data_in[3] )   // From multiplexor
+);
 
 // ======================================
 // Instantiate ECC Memory
 // ======================================
+wire [31:0] ecc_mem_code_in;
+
+assign ecc_mem_code_in[7:0] = syndrome_ecc[0];
+assign ecc_mem_code_in[15:8] = syndrome_ecc[1];
+assign ecc_mem_code_in[23:16] = syndrome_ecc[2];
+assign ecc_mem_code_in[31:24] = syndrome_ecc[3];
 
 main_mem #(
-  .WB_DWIDTH             ( 8                     ),// ecc width
+  .WB_DWIDTH             ( 32                     ),// 4x ecc width
   .WB_SWIDTH             ( WB_SWIDTH             )
 )
 ecc_mem (
@@ -133,8 +169,8 @@ ecc_mem (
   .i_wb_adr               ( edc_wb_adr                ),
   .i_wb_sel               ( edc_wb_sel                ),
   .i_wb_we                ( edc_wb_we                 ),
-  .o_wb_dat               ( generator.IC              ),  // To Generator   
-  .i_wb_dat               ( syndrome_ecc              ),  // From Generator
+  .o_wb_dat               (                           ),  // To Generator   
+  .i_wb_dat               ( ecc_mem_code_in           ),  // From Generator
   .i_wb_cyc               ( edc_wb_cyc                ),
   .i_wb_stb               ( edc_wb_stb                ),
   .o_wb_ack               ( /*edc_wb_ack*/            ),
@@ -145,18 +181,40 @@ ecc_mem (
 // ======================================
 // Instantiate EDC Corrector
 // ======================================
+wire [3:0]uncorrected_error;
 
-wire [31:0] corrector_output;
+assign edc_wb_err = main_mem_err | ecc_mem_err | (| uncorrected_error);
 
-assign edc_wb_dat_r[WB_DWIDTH-1:32] = umain_read_data[WB_DWIDTH-1:32];
-assign edc_wb_dat_r[31:0] =  corrector_output;
-
-edcc_mod corrector (
-  .OD                      ( corrector_output         ),  // To Wishbone
-  .UE                      ( edc_wb_err               ),  // To Wishbone
+edcc_mod corrector0 (
+  .OD                      ( edc_wb_dat_r[31:0]         ),  // To Wishbone
+  .UE                      ( uncorrected_error[0]               ), 
   .ED                      (                          ),  // Discarded
-  .S                       ( syndrome_ecc             ),  // From Generator
+  .S                       ( syndrome_ecc[0]             ),  // From Generator
   .ID                      ( umain_read_data[31:0]    )   // From Main Memory
+); 
+
+edcc_mod corrector1 (
+  .OD                      ( edc_wb_dat_r[63:32]         ),  // To Wishbone
+  .UE                      ( uncorrected_error[1]               ),  // To Wishbone
+  .ED                      (                          ),  // Discarded
+  .S                       ( syndrome_ecc[1]             ),  // From Generator
+  .ID                      ( umain_read_data[63:32]    )   // From Main Memory
+); 
+
+edcc_mod corrector2 (
+  .OD                      ( edc_wb_dat_r[95:64]        ),  // To Wishbone
+  .UE                      ( uncorrected_error[2]               ),  // To Wishbone
+  .ED                      (                          ),  // Discarded
+  .S                       ( syndrome_ecc[2]             ),  // From Generator
+  .ID                      ( umain_read_data[95:64]    )   // From Main Memory
+); 
+
+edcc_mod corrector3 (
+  .OD                      ( edc_wb_dat_r[127:96]        ),  // To Wishbone
+  .UE                      ( uncorrected_error[3]               ),  // To Wishbone
+  .ED                      (                          ),  // Discarded
+  .S                       ( syndrome_ecc[3]             ),  // From Generator
+  .ID                      ( umain_read_data[127:96]    )   // From Main Memory
 ); 
 
 endmodule

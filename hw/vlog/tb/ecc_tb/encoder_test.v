@@ -7,15 +7,17 @@ wire my_done;
 
 initial
 begin
-  my_data = 32'd12345;
+  my_data = 32'he3a02001;
   my_request = 1'b1;
 end
 
-ecc_encoder my_enc(
-      .i_request( my_request ),
-      .i_data( my_data ),
-      .o_done( my_done ),
-      .o_ecc_code( my_ecc )
+edcg_mod generator (
+  .S                      ( my_ecc      ),  // To Corrector and ECC Memory
+  .R                      ( 1'b0       ),  
+  .IC                     ( 8'b0  ),  // From ECC Memory
+  .ID                     ( my_data )   // From multiplexor
 );
+
+//data to test: 0xe3a02001
 
 endmodule
