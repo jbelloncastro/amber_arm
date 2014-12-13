@@ -48,11 +48,35 @@ module edcg_mod #() (
 
 input   [31:0]  ID,
 input   [7:0]   IC,
-input           R,
+input           WE,
 output  [7:0]   S
 
 );
   
+wire [7:0] ecc40_32;
+wire [7:0] R;
+
+assign R[0] = ~WE;
+assign R[1] = ~WE; 
+assign R[2] = ~WE; 
+assign R[3] = ~WE; 
+assign R[4] = ~WE; 
+assign R[5] = ~WE; 
+assign R[6] = ~WE; 
+assign R[7] = ~WE; 
+
+assign ecc40_32[7] = ^ (ID & 32'b1000_1000_1000_1000_1111_1111_0000_0000);
+assign ecc40_32[6] = ^ (ID & 32'b0100_0100_0100_0100_0000_0000_1111_1111);
+assign ecc40_32[5] = ^ (ID & 32'b0010_0010_0010_0010_1111_0000_1111_0000);
+assign ecc40_32[4] = ^ (ID & 32'b0001_0001_0001_0001_0000_1111_0000_1111);
+assign ecc40_32[3] = ^ (ID & 32'b1111_1111_0000_0000_1000_1000_1000_1000);
+assign ecc40_32[2] = ^ (ID & 32'b0000_0000_1111_1111_0100_0100_0100_0100);
+assign ecc40_32[1] = ^ (ID & 32'b1111_0000_1111_0000_0010_0010_0010_0010);
+assign ecc40_32[0] = ^ (ID & 32'b0000_1111_0000_1111_0001_0001_0001_0001);
+
+assign S = ecc40_32 ^ (R & IC);
+
+/*
 wire    [15:0]    XA;
 wire    [7:0]     XB, XC, XD, XE, F, G, H;
 
@@ -73,14 +97,14 @@ xor XA13(XA[13], ID[26], ID[27]);
 xor XA14(XA[14], ID[28], ID[29]);
 xor XA15(XA[15], ID[30], ID[31]);
 
-xor F0(F[0], XA[0], XA[1]);
-xor F1(F[1], XA[2], XA[3]);
-xor F2(F[2], XA[4], XA[5]);
-xor F3(F[3], XA[6], XA[7]);
-xor F4(F[4], XA[8], XA[9]);
-xor F5(F[5], XA[10], XA[11]);
-xor F6(F[6], XA[12], XA[13]);
-xor F7(F[7], XA[14], XA[15]);
+xor F0(F[0], XA[0], XA[1]); // ID0 ID1 ID2 ID3
+xor F1(F[1], XA[2], XA[3]); // ID4 ID5 ID6 ID7
+xor F2(F[2], XA[4], XA[5]); // ID8 ID9 ID10 ID11
+xor F3(F[3], XA[6], XA[7]); // ID12 ID13 ID14 ID15
+xor F4(F[4], XA[8], XA[9]); // ID16 ID17 ID18 ID19
+xor F5(F[5], XA[10], XA[11]); // ID20 ID21 ID22 ID23
+xor F6(F[6], XA[12], XA[13]); // ID24 ID25 ID26 ID27
+xor F7(F[7], XA[14], XA[15]); // ID28 ID29 ID30 ID31
 
 and H0(H[0], IC[0], R);
 and H1(H[1], IC[1], R);
@@ -109,32 +133,32 @@ xor XC5(XC[5], ID[25], ID[29]);
 xor XC6(XC[6], ID[26], ID[30]);
 xor XC7(XC[7], ID[27], ID[31]);
 
-xor XE0(XE[0], XB[0], XC[0]);
-xor XE1(XE[1], XB[1], XC[1]);
-xor XE2(XE[2], XB[2], XC[2]);
-xor XE3(XE[3], XB[3], XC[3]);
-xor XE4(XE[4], XB[4], XC[4]);
-xor XE5(XE[5], XB[5], XC[5]);
-xor XE6(XE[6], XB[6], XC[6]);
-xor XE7(XE[7], XB[7], XC[7]);
+xor XE0(XE[0], XB[0], XC[0]); // ID0 ID4 ID8 ID12
+xor XE1(XE[1], XB[1], XC[1]); // ID1 ID5 ID9 ID13
+xor XE2(XE[2], XB[2], XC[2]); // ID2 ID6 ID10 ID14
+xor XE3(XE[3], XB[3], XC[3]); // ID3 ID7 ID11 ID15
+xor XE4(XE[4], XB[4], XC[4]); // ID16 ID20 ID24 ID28
+xor XE5(XE[5], XB[5], XC[5]); // ID17 ID21 ID25 ID29
+xor XE6(XE[6], XB[6], XC[6]); // ID18 ID22 ID26 ID30
+xor XE7(XE[7], XB[7], XC[7]); // ID19 ID23 ID27 ID31
 
-xor G0(G[0], F[0], F[1]);
-xor G1(G[1], F[2], F[3]);
-xor G2(G[2], F[0], F[2]);
-xor G3(G[3], F[1], F[3]);
-xor G4(G[4], F[4], F[5]);
-xor G5(G[5], F[6], F[7]);
-xor G6(G[6], F[4], F[6]);
-xor G7(G[7], F[5], F[7]);
+xor G0(G[0], F[0], F[1]); // ID0 ID1 ID2 ID3 ID4 ID5 ID6 ID7
+xor G1(G[1], F[2], F[3]); // ID8 ID9 ID10 ID11 ID12 ID13 ID14 ID15
+xor G2(G[2], F[0], F[2]); // ID0 ID1 ID2 ID3 ID8 ID9 ID10 ID11
+xor G3(G[3], F[1], F[3]); // ID4 ID5 ID6 ID7 ID12 ID13 ID14 ID15
+xor G4(G[4], F[4], F[5]); // ID16 ID17 ID18 ID19 ID20 ID21 ID22 ID23
+xor G5(G[5], F[6], F[7]); // ID24 ID25 ID26 ID27 ID28 ID29 ID30 ID31
+xor G6(G[6], F[4], F[6]); // ID16 ID17 ID18 ID19 ID24 ID25 ID26 ID27
+xor G7(G[7], F[5], F[7]); // ID20 ID21 ID22 ID23 ID28 ID29 ID30 ID31
 
-xor XD0(XD[0], G[4], H[0]);
-xor XD1(XD[1], G[5], H[1]);
-xor XD2(XD[2], G[6], H[2]);
-xor XD3(XD[3], G[7], H[3]);
-xor XD4(XD[4], G[0], H[4]);
-xor XD5(XD[5], G[1], H[5]);
-xor XD6(XD[6], G[2], H[6]);
-xor XD7(XD[7], G[3], H[7]);
+xor XD0(XD[0], G[4], H[0]); // ID16 ID17 ID18 ID19 ID20 ID21 ID22 ID23
+xor XD1(XD[1], G[5], H[1]); // ID24 ID25 ID26 ID27 ID28 ID29 ID30 ID31
+xor XD2(XD[2], G[6], H[2]); // ID16 ID17 ID18 ID19 ID24 ID25 ID26 ID27
+xor XD3(XD[3], G[7], H[3]); // ID20 ID21 ID22 ID23 ID28 ID29 ID30 ID31
+xor XD4(XD[4], G[0], H[4]); // ID0 ID1 ID2 ID3   ID4 ID5 ID6 ID7
+xor XD5(XD[5], G[1], H[5]); // ID8 ID9 ID10 ID11 ID12 ID13 ID14 ID15
+xor XD6(XD[6], G[2], H[6]); // ID0 ID1 ID2 ID3   ID8 ID9 ID10 ID11
+xor XD7(XD[7], G[3], H[7]); // ID4 ID5 ID6 ID7   ID12 ID13 ID14 ID15
 
 xor S0(S[0], XD[0], XE[0]);
 xor S1(S[1], XD[1], XE[1]);
@@ -144,5 +168,6 @@ xor S4(S[4], XD[4], XE[4]);
 xor S5(S[5], XD[5], XE[5]);
 xor S6(S[6], XD[6], XE[6]);
 xor S7(S[7], XD[7], XE[7]);
+*/
 
 endmodule

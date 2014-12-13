@@ -7,7 +7,7 @@ wire my_done;
 
 initial
 begin
-  my_data = 32'he3a02001;
+  my_data = 32'he0813002;
   my_request = 1'b1;
 end
 

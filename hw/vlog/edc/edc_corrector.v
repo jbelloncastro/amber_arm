@@ -54,6 +54,48 @@ output          ED
 
 );
 
+wire[31:0] E;     // Decoder Output
+wire          NC; // No correction
+
+assign E[0] = (S & 8'b1000_1010);
+assign E[1] = (S & 8'b0100_1010);
+assign E[2] = (S & 8'b0010_1010);
+assign E[3] = (S & 8'b0001_1010);
+assign E[4] = (S & 8'b1000_1001);
+assign E[5] = (S & 8'b0100_1001);
+assign E[6] = (S & 8'b0010_1001);
+assign E[7] = (S & 8'b0001_1001);
+assign E[8] = (S & 8'b1000_0110);
+assign E[9] = (S & 8'b0100_0110);
+assign E[10] = (S & 8'b0010_0110);
+assign E[11] = (S & 8'b0001_0110);
+assign E[12] = (S & 8'b1000_0101);
+assign E[13] = (S & 8'b0100_0101);
+assign E[14] = (S & 8'b0010_0101);
+assign E[15] = (S & 8'b0001_0101);
+assign E[16] = (S & 8'b1010_1000);
+assign E[17] = (S & 8'b1010_0100);
+assign E[18] = (S & 8'b1010_0010);
+assign E[19] = (S & 8'b1010_0001);
+assign E[20] = (S & 8'b1001_1000);
+assign E[21] = (S & 8'b1001_0100);
+assign E[22] = (S & 8'b1001_0010);
+assign E[23] = (S & 8'b1001_0001);
+assign E[24] = (S & 8'b0110_1000);
+assign E[25] = (S & 8'b0110_0100);
+assign E[26] = (S & 8'b0110_0010);
+assign E[27] = (S & 8'b0110_0001);
+assign E[28] = (S & 8'b0101_1000);
+assign E[29] = (S & 8'b0101_0100);
+assign E[30] = (S & 8'b0101_0010);
+assign E[31] = (S & 8'b0101_0001);
+
+assign OD = E ^ ID;
+assign ED = | S;
+assign NC = ~| E;
+assign UE = ED & NC;
+
+/*
 wire  [31:0]  E;
 wire          NC; // No correction
 wire  [7:0]   T, W;
@@ -196,6 +238,8 @@ xor OD28(OD[28], ID[28], E[28]);
 xor OD29(OD[29], ID[29], E[29]);
 xor OD30(OD[30], ID[30], E[30]);
 xor OD31(OD[31], ID[31], E[31]);
+
+*/
 
 endmodule
 

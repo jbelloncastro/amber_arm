@@ -38,6 +38,8 @@
 //                                                              //
 //////////////////////////////////////////////////////////////////
 
+`define AMBER_LOAD_MAIN_MEM
+
 `timescale  1 ps / 1 ps
 
 `include "system_config_defines.v"
@@ -458,9 +460,9 @@ always @ ( posedge `U_SYSTEM.sys_clk )
  
                             `ifdef AMBER_LOAD_MEM_DEBUG
                                 $display ("Load RAM: PAddr: 0x%08x, Data 0x%08x", 
-                                           main_mem_file_address, main_mem_file_data);
+                                           main_mem_file_address, `U_RAM [main_mem_file_address[31:4]]);
                                 $display ("Load ECC: PAddr: 0x%08x, Data 0x%08x", 
-                                           main_mem_file_address, `U_ECC_MEM [main_mem_file_address[31:4]] );
+                                           main_mem_file_address, `U_ECC_MEM [main_mem_file_address[31:4]]);
                             `endif   
                         
                         `endif
