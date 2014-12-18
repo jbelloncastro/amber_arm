@@ -1,9 +1,6 @@
 //////////////////////////////////////////////////////////////////
 //                                                              //
-//  Error Detector and Corrector module.                        //
-//                                                              //
-//  This file is part of the Amber project                      //
-//  http://www.opencores.org/project,amber                      //
+//  ECC protected memory module.                                //
 //                                                              //
 //  Description                                                 //
 //  Non-synthesizable main memory. Holds 128MBytes              //
@@ -52,7 +49,7 @@ parameter WB_SWIDTH  = 4
 )(
 
 input                          edc_clk,
-input                          edc_mem_ctrl,  // 0=128MB, 1=32MB
+input                          edc_mem_ctrl,
 
 // Wishbone Bus
 input       [31:0]             edc_wb_adr,
@@ -64,18 +61,33 @@ input                          edc_wb_cyc,
 input                          edc_wb_stb,
 output                         edc_wb_ack,
 output                         edc_wb_err
-
 );
+//=====================================
+// Declarations
+//=====================================
+// Variables used in 'generate' blocks
+//genvar i, // Used to iterate in loops
+//       b, // Bus' least significant bit
+//       e; // Bus' most significant bit (plus one)
 
-wire main_mem_err;
-wire main_mem_ack;
+// Buses and wires used to interconnect all the elements of the module
+wire main_mem_err; // Drives the main memory error flag
+wire main_mem_ack; // Drives the main memory ACK flag
 
-wire [WB_DWIDTH-1:0] umain_read_data;
+wire [WB_DWIDTH-1:0] umain_read_data; // Data read from main memory
+wire [31:0] ecc_mem_code_in; // Generated ECC that will be written into ECC memory
 
-// ======================================
-// Instantiate Main Memory
-// ======================================
+reg [31:0] generator_data_in[0:3]; // Data introduced in generator (from bus/main mem)
+wire [7:0] syndrome_ecc[0:3]; // Diff between generated and read ECC
+wire [31:0] ecc_mem_data; // Data read from ECC memory
 
+wire [3:0]uncorrected_error; // Result from each of the correctors
+
+//=====================================
+// Instantiations
+//=====================================
+
+// Main memory
 main_mem #(
   .WB_DWIDTH             ( WB_DWIDTH             ),
   .WB_SWIDTH             ( WB_SWIDTH             )
@@ -86,7 +98,7 @@ u_main_mem (
   .i_wb_adr               ( edc_wb_adr                  ),
   .i_wb_sel               ( edc_wb_sel                  ),
   .i_wb_we                ( edc_wb_we                   ),
-  .o_wb_dat               ( umain_read_data             ), // To Corrector
+  .o_wb_dat               ( /*umain_read_data*/         ), // To Corrector
   .i_wb_dat               ( edc_wb_dat_w                ), // From Wishbone
   .i_wb_cyc               ( edc_wb_cyc                  ),
   .i_wb_stb               ( edc_wb_stb                  ),
@@ -94,72 +106,21 @@ u_main_mem (
   .o_wb_err               ( main_mem_err                )
 );
 
-
-// ======================================
-// Instantiate EDC Generator
-// ======================================
-reg [31:0] generator_data_in[0:3];
-wire [7:0] syndrome_ecc[0:3];
-
-
-always@(edc_wb_we or edc_wb_dat_w or umain_read_data) 
-begin
-  case(edc_wb_we)
-      'b1: begin
-          generator_data_in[0] = edc_wb_dat_w[31:0];// From Wishbone
-          generator_data_in[1] = edc_wb_dat_w[63:32];// From Wishbone
-          generator_data_in[2] = edc_wb_dat_w[95:64];// From Wishbone
-          generator_data_in[3] = edc_wb_dat_w[127:96];// From Wishbone
-    end
-      default: begin
-          generator_data_in[0] = umain_read_data[31:0];// From Main Memory
-          generator_data_in[1] = umain_read_data[63:32];// From Main Memory
-          generator_data_in[2] = umain_read_data[95:64];// From Main Memory
-          generator_data_in[3] = umain_read_data[127:96];// From Main Memory
-    end
-  endcase
-end
-
-
-wire [31:0] ecc_mem_data;
-
-edcg_mod generator0 (
-  .S                      ( syndrome_ecc[0]         ),  // To Corrector and ECC Memory
-  .WE                     ( edc_wb_we               ),  
-  .IC                     ( ecc_mem_data[7:0]       ),  // From ECC Memory
-  .ID                     ( generator_data_in[0]    )   // From multiplexor
+//  ECC memory
+generic_sram_line_en
+#(
+    .DATA_WIDTH          ( 32             ),
+    .ADDRESS_WIDTH       ( 28             ),
+    .INITIALIZE_TO_ZERO  ( 0              )
+)
+ecc_mem
+(
+    .i_clk          ( edc_clk              ),
+    .i_write_enable ( edc_wb_we            ),
+    .i_address      ( edc_wb_adr[31:4]     ),
+    .o_read_data    ( ecc_mem_data         ),
+    .i_write_data   ( ecc_mem_code_in      )
 );
-
-edcg_mod generator1 (
-  .S                      ( syndrome_ecc[1]         ),  // To Corrector and ECC Memory
-  .WE                     ( edc_wb_we               ),  
-  .IC                     ( ecc_mem_data[15:8]      ),  // From ECC Memory
-  .ID                     ( generator_data_in[1]    )   // From multiplexor
-);
-
-edcg_mod generator2 (
-  .S                      ( syndrome_ecc[2]          ),  // To Corrector and ECC Memory
-  .WE                     ( edc_wb_we                ),  
-  .IC                     ( ecc_mem_data[23:16]      ),  // From ECC Memory
-  .ID                     ( generator_data_in[2]     )   // From multiplexor
-);
-
-edcg_mod generator3 (
-  .S                      ( syndrome_ecc[3]          ),  // To Corrector and ECC Memory
-  .WE                     ( edc_wb_we                ),  
-  .IC                     ( ecc_mem_data[31:24]      ),  // From ECC Memory
-  .ID                     ( generator_data_in[3]     )   // From multiplexor
-);
-
-// ======================================
-// Instantiate ECC Memory
-// ======================================
-wire [31:0] ecc_mem_code_in;
-
-assign ecc_mem_code_in[7:0] = syndrome_ecc[0];
-assign ecc_mem_code_in[15:8] = syndrome_ecc[1];
-assign ecc_mem_code_in[23:16] = syndrome_ecc[2];
-assign ecc_mem_code_in[31:24] = syndrome_ecc[3];
 
 /*
 main_mem #(
@@ -181,59 +142,61 @@ ecc_mem (
 );
 */
 
-generic_sram_line_en
-#(
-    .DATA_WIDTH          ( 32             ),
-    .ADDRESS_WIDTH       ( 28             ),
-    .INITIALIZE_TO_ZERO  ( 0              )
-)
-ecc_mem
-(
-    .i_clk          ( edc_clk              ),
-    .i_write_enable ( edc_wb_we            ),
-    .i_address      ( edc_wb_adr[31:4]     ),
-    .o_read_data    ( ecc_mem_data         ),
-    .i_write_data   ( ecc_mem_code_in      )
-);   
+genvar i;
+generate  
+  localparam ecc_width = 8;
+  localparam data_width = 32;
+  
+  // Error code generators
+  for(i=0; i<4; i=i+1) begin    
+    edc_generator gen (
+      .i_data          ( generator_data_in[i]   ),                  // From multiplexor
+      .i_ecc           ( ecc_mem_data[ecc_width*i+:ecc_width]    ), // From ECC memory
+      .i_write_enabled ( edc_wb_we              ),                  // Write enabled flag (from bus)
+      .o_ecc_syndrome  ( ecc_mem_code_in[ecc_width*i+:ecc_width] )  // To corrector/ECC memory
+    );
+  end
+  
+  // Error detection and correction modules
+  for(i=0; i<4; i=i+1) begin
+    edc_corrector cor (
+      .i_data              ( umain_read_data[data_width*i+:data_width] ), // From main memory
+      .i_syndrome          ( syndrome_ecc[i] ),                           // From generator[i]
+      .o_data              ( edc_wb_dat_r[data_width*i+:data_width] ),    // Data output to bus
+      .o_error_detected    ( ),
+      .o_uncorrected_error ( uncorrected_error[i] )
+    );
+  end
+endgenerate
 
-// ======================================
-// Instantiate EDC Corrector
-// ======================================
-wire [3:0]uncorrected_error;
+//=====================================
+// Interconections
+//=====================================
+// Multiplexor: select data source to feed the ECC generator
+always@(edc_wb_we or edc_wb_dat_w or umain_read_data) 
+begin
+  case(edc_wb_we)
+      'b1: begin// Wishbone
+          generator_data_in[0] = edc_wb_dat_w[31:0];
+          generator_data_in[1] = edc_wb_dat_w[63:32];
+          generator_data_in[2] = edc_wb_dat_w[95:64];
+          generator_data_in[3] = edc_wb_dat_w[127:96];
+    end
+      default: begin// From Main Memory
+          generator_data_in[0] = umain_read_data[31:0];
+          generator_data_in[1] = umain_read_data[63:32];
+          generator_data_in[2] = umain_read_data[95:64];
+          generator_data_in[3] = umain_read_data[127:96];
+    end
+  endcase
+end
 
+// Bus output synchronization flags
+// ACK: simply use main memory's
 assign edc_wb_ack = main_mem_ack;
-assign edc_wb_err = main_mem_ack & ( main_mem_err | (| uncorrected_error));
-
-edcc_mod corrector0 (
-  .OD                      ( edc_wb_dat_r[31:0]       ),  // To Wishbone
-  .UE                      ( uncorrected_error[0]     ), 
-  .ED                      (                          ),  // Discarded
-  .S                       ( syndrome_ecc[0]          ),  // From Generator
-  .ID                      ( umain_read_data[31:0]    )   // From Main Memory
-); 
-
-edcc_mod corrector1 (
-  .OD                      ( edc_wb_dat_r[63:32]      ),  // To Wishbone
-  .UE                      ( uncorrected_error[1]     ),  // To Wishbone
-  .ED                      (                          ),  // Discarded
-  .S                       ( syndrome_ecc[1]          ),  // From Generator
-  .ID                      ( umain_read_data[63:32]   )   // From Main Memory
-); 
-
-edcc_mod corrector2 (
-  .OD                      ( edc_wb_dat_r[95:64]      ),  // To Wishbone
-  .UE                      ( uncorrected_error[2]     ),  // To Wishbone
-  .ED                      (                          ),  // Discarded
-  .S                       ( syndrome_ecc[2]          ),  // From Generator
-  .ID                      ( umain_read_data[95:64]   )   // From Main Memory
-); 
-
-edcc_mod corrector3 (
-  .OD                      ( edc_wb_dat_r[127:96]      ),  // To Wishbone
-  .UE                      ( uncorrected_error[3]      ),  // To Wishbone
-  .ED                      (                           ),  // Discarded
-  .S                       ( syndrome_ecc[3]           ),  // From Generator
-  .ID                      ( umain_read_data[127:96]   )   // From Main Memory
-); 
+// Error: Must be set either when the memory has an error
+//                        or when an uncorrected error has been found.
+// Activate only when the operation has finished (ACK active)
+assign edc_wb_err = main_mem_ack & ( main_mem_err | ( ~edc_wb_we & (| uncorrected_error)));
 
 endmodule
