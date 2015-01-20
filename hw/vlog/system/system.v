@@ -524,11 +524,7 @@ u_interrupt_controller (
 //               .o_wb_err               ( s_wb_err  [2]         )
 //            );
             
-      edc_mod  #(
-                .WB_DWIDTH             ( WB_DWIDTH             ),
-                .WB_SWIDTH             ( WB_SWIDTH             )
-                )
-            edc (
+      edc_mod edc (
                .edc_clk                  ( sys_clk               ),
                .edc_mem_ctrl             ( test_mem_ctrl         ),
                .edc_wb_adr               ( s_wb_adr  [2]         ),
@@ -540,7 +536,7 @@ u_interrupt_controller (
                .edc_wb_stb               ( s_wb_stb  [2]         ),
                .edc_wb_ack               ( s_wb_ack  [2]         ),
                .edc_wb_err               ( s_wb_err  [2]         )
-            );            
+            );
 
 `endif
 

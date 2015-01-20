@@ -459,10 +459,12 @@ always @ ( posedge `U_SYSTEM.sys_clk )
                            
  
                             `ifdef AMBER_LOAD_MEM_DEBUG
-                                $display ("Load RAM: PAddr: 0x%08x, Data 0x%08x", 
+                                if( `U_RAM[main_mem_file_address[31:4]][127] !== 1'bx ) begin
+                                  $display ("Load RAM: PAddr: 0x%08x, Data 0x%08x", 
                                            main_mem_file_address, `U_RAM [main_mem_file_address[31:4]]);
-                                $display ("Load ECC: PAddr: 0x%08x, Data 0x%08x", 
-                                           main_mem_file_address, `U_ECC_MEM [main_mem_file_address[31:4]]);
+                                  $display ("Load ECC: PAddr: 0x%08x, Data 0x%08x", 
+                                           main_mem_file_address[31:4], `U_ECC_MEM [main_mem_file_address[31:4]]);
+                                end
                             `endif   
                         
                         `endif

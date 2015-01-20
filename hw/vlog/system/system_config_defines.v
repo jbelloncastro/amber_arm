@@ -123,10 +123,10 @@
     `define AMBER_TEST_NAME         "add"
 `endif
 `ifndef MAIN_MEM_FILE
-    `define MAIN_MEM_FILE           "C:\Users\bscuser\amber_arm\hw\tests\bin\add.mem"
+    `define MAIN_MEM_FILE           "C:/Users/bscuser/amber_arm_new/amber_arm/hw/tests/bin/add.mem"
 `endif
 `ifndef BOOT_MEM_FILE
-    `define BOOT_MEM_FILE           "C:\Users\bscuser\amber_arm\hw\tests\bin\add.mem"
+    `define BOOT_MEM_FILE           "C:/Users/bscuser/amber_arm_new/amber_arm/hw/tests/bin/add.mem"
 `endif
 `ifndef BOOT_MEM_PARAMS_FILE
     `define BOOT_MEM_PARAMS_FILE    "not-defined"

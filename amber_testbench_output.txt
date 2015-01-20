@@ -1,0 +1,59 @@
+# Load main memory from C:/Users/bscuser/amber_arm_new/amber_arm/hw/tests/bin/add.mem
+# Load RAM: PAddr: 0x0000000c, Data 0xe3530004e0813002e3a02001e3a01003
+# Load ECC: PAddr: 0x00000000, Data 0x4db8f7e2
+# Load RAM: PAddr: 0x0000001c, Data 0xe3a05000e3a040001a00002613a0a034
+# Load ECC: PAddr: 0x00000001, Data 0x6821124e
+# Load RAM: PAddr: 0x0000002c, Data 0x1a00002013a0a03ae3560000e0856004
+# Load ECC: PAddr: 0x00000002, Data 0x215b6b19
+# Load RAM: PAddr: 0x0000003c, Data 0xe3790001e0879008e3e08000e3a07000
+# Load ECC: PAddr: 0x00000003, Data 0xea8b7a22
+# Load RAM: PAddr: 0x0000004c, Data 0xe3a02000e3e010001a00001a13a0a040
+# Load ECC: PAddr: 0x00000004, Data 0xe2b912ed
+# Load RAM: PAddr: 0x0000005c, Data 0x1a00001413a0a046e3730001e0813002
+# Load ECC: PAddr: 0x00000005, Data 0x07dee9b8
+# Load RAM: PAddr: 0x0000006c, Data 0xe3760002e0846005e3e05000e3e04000
+# Load ECC: PAddr: 0x00000006, Data 0xe95d3079
+# Load RAM: PAddr: 0x0000007c, Data 0xe3e080fee3e070001a00000e13a0a04c
+# Load ECC: PAddr: 0x00000007, Data 0x6f7a72ee
+# Load RAM: PAddr: 0x0000008c, Data 0x1a00000813a0a052e3790c01e0879008
+# Load ECC: PAddr: 0x00000008, Data 0x41bee98b
+# Load RAM: PAddr: 0x0000009c, Data 0x7a000004e0913002e3a02001e59f103c
+# Load ECC: PAddr: 0x00000009, Data 0x8eecf7e2
+# Load RAM: PAddr: 0x000000ac, Data 0x1a00000013a0a05ce1500003e59f0030
+# Load ECC: PAddr: 0x0000000a, Data 0x67ab0aa8
+# Load RAM: PAddr: 0x000000bc, Data 0xeafffffce58ba000e59fb014ea000002
+# Load ECC: PAddr: 0x0000000b, Data 0x646d4271
+# Load RAM: PAddr: 0x000000cc, Data 0xeafffffbe58ba000e3a0a011e59fb008
+# Load ECC: PAddr: 0x0000000c, Data 0x426d3804
+# Load RAM: PAddr: 0x000000dc, Data 0x800000007ffffffff0000000
+# Load ECC: PAddr: 0x0000000d, Data 0x00a8a800
+# Read in 67 lines
+# 
+# ----------------------------------------------------------------------------
+# Amber Core
+#          User         FIRQ         IRQ        > SVC
+# r0       0x80000000
+# r1       0x7fffffff
+# r2       0x00000001
+# r3       0x80000000
+# r4       0xffffffff
+# r5       0xffffffff
+# r6       0xfffffffe
+# r7       0xffffffff
+# r8       0xffffff01   0xdeadbeef 
+# r9       0xffffff00   0xdeadbeef 
+# r10      0x00000011   0xdeadbeef 
+# r11      0xf0000000   0xdeadbeef 
+# r12      0xdeadbeef   0xdeadbeef 
+# r13      0xdeadbeef   0xdeadbeef   0xdeadbeef   0xdeadbeef
+# r14 (lr) 0xdeadbeef   0xdeadbeef   0xdeadbeef   0xdeadbeef
+# r15 (pc) 0x000000d4
+# 
+# Status Bits: N=0, Z=1, C=1, V=0, IRQ Mask 1, FIRQ Mask 1, Mode = Supervisor    
+# ----------------------------------------------------------------------------
+# 
+# ++++++++++++++++++++
+# Passed add 230 ticks
+# ++++++++++++++++++++
+# ** Note: $finish    : C:/Users/bscuser/amber_arm_new/amber_arm/hw/vlog/tb/tb.v(523)
+#    Time: 5727500 ps  Iteration: 4  Instance: /tb
