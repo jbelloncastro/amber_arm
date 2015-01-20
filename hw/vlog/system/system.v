@@ -39,7 +39,9 @@
 // from http://www.opencores.org/lgpl.shtml                     //
 //                                                              //
 //////////////////////////////////////////////////////////////////
+`define AMBER_A25_CORE
 `include "system_config_defines.v"
+
 
 module system
 (
@@ -217,11 +219,11 @@ clocks_resets u_clocks_resets (
 // -------------------------------------------------------------
 // Instantiate Amber Processor Core
 // -------------------------------------------------------------
-`ifdef AMBER_A25_CORE
+//`ifdef AMBER_A25_CORE
 a25_core u_amber (
-`else
-a23_core u_amber (
-`endif
+//`else
+//a23_core u_amber (
+//`endif
     .i_clk          ( sys_clk         ),
 
     .i_irq          ( amber_irq       ),
