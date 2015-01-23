@@ -53,33 +53,43 @@ module edc_erasure (
   input                  i_mem_ack, // ( AND(data mem ack, ecc mem ack) )
   output reg [31:0]      o_bus_data,//(to bus) 
   output reg [31:0]      o_mem_data,//(to data mem)
+  output reg             o_mem_sel, //(to data mem)
+  output reg             o_mem_we,  //(to data mem)
   output reg [7:0]       o_mem_ecc, // maybe unused
   output reg             o_err,     //(to bus)
   output reg             o_ack      //(to bus)
 );
 
-parameter SIZE             = 3;
-parameter IDLE             = 3'd0;
-parameter WRITE            = 3'd1;
-parameter READ             = 3'd2;
-parameter WRITE_COMPLEMENT = 3'd3;
-parameter READ_COMPLEMENT  = 3'd4;
-parameter WRITE_CORRECTED  = 3'd5;
+parameter SIZE                  = 4;
+parameter IDLE                  = 4'd0;
+parameter WRITE                 = 4'd1;
+parameter READ                  = 4'd2;
+parameter WRITE_COMPLEMENT      = 4'd3;
+parameter WRITE_COMPLEMENT_DONE = 4'd4;// we need another step to bring o_mem_sel down and up again
+parameter READ_COMPLEMENT       = 4'd5;
+parameter READ_COMPLEMENT_DONE  = 4'd6;// we need another step to bring o_mem_sel down and up again
+parameter WRITE_CORRECTED       = 4'd7;
+parameter WRITE_DONE            = 4'd8;
+parameter READ_DONE             = 4'd9;
+parameter ERROR                 = 4'd10;
+
 //--------- Internal variables ---------
 reg [SIZE-1:0] current_state;
 wire [SIZE-1:0] next_state;
 //---------  Code starts here  ---------
-assign next_state = fsm_function(current_state, i_sel, i_we, i_mem_ack, i_err, i_ue);
+assign next_state = fsm_function(current_state, i_sel, o_mem_sel, i_we, i_mem_ack, i_err, i_ue);
 //--------- State combinational logic ---------
 function [SIZE-1:0] fsm_function;
   input [SIZE-1:0] state;
   input i_start;
+  input i_done;
   input i_we;
   input i_ack;
   input i_err;
   input i_ue;
 
   case(state)
+    // 0
     IDLE: if (i_start == 1'b1) begin
         if (i_we == 1'b1) begin
             fsm_function = WRITE;
@@ -90,15 +100,17 @@ function [SIZE-1:0] fsm_function;
         fsm_function = IDLE;    
       end
 
+    // 1
     WRITE: if (i_ack == 1'b1) begin
-        fsm_function = IDLE;// go back to idle when finished
+        fsm_function = WRITE_DONE;// go back to idle when finished
       end else begin // still waiting for memory...
         fsm_function = WRITE;
       end
 
+    // 2
     READ: if (i_ack == 1'b1) begin
         if (i_ue == 1'b0) begin// meanwhile no errors... go back to idle
-          fsm_function = IDLE;
+          fsm_function = READ_DONE;
         end else begin
           fsm_function = WRITE_COMPLEMENT;
         end
@@ -106,27 +118,56 @@ function [SIZE-1:0] fsm_function;
         fsm_function = READ;
       end
 
+    // 3
     WRITE_COMPLEMENT: if (i_ack == 1'b1) begin
-        fsm_function = READ_COMPLEMENT;
+        fsm_function = WRITE_COMPLEMENT_DONE;
       end else begin // still waiting...
         fsm_function = WRITE_COMPLEMENT;
       end
 
+    // 4
+    WRITE_COMPLEMENT_DONE: if (i_done == 1'b0 ) begin
+        fsm_function = READ_COMPLEMENT;
+      end else begin
+        fsm_function = WRITE_COMPLEMENT_DONE;
+      end
+
+    // 5
     READ_COMPLEMENT: if (i_ack == 1'b1) begin
         if (i_ue == 1'b1) begin
-          fsm_function = IDLE;
+          fsm_function = ERROR;// uncorrectable error
         end else begin
-          fsm_function = WRITE_CORRECTED;
+          fsm_function = READ_COMPLEMENT_DONE;
         end
       end else begin // still waiting...
         fsm_function = READ_COMPLEMENT;
       end
 
+    // 6
+    READ_COMPLEMENT_DONE:  if (i_done == 1'b0 ) begin
+        fsm_function = WRITE_CORRECTED;
+      end else begin
+        fsm_function = READ_COMPLEMENT_DONE;
+      end
+
+    // 7      
     WRITE_CORRECTED: if (i_ack == 1'b1) begin
-        fsm_function = IDLE;
+        fsm_function = READ_DONE;
       end else begin // still waiting...
         fsm_function = WRITE_CORRECTED;
       end
+
+    // 8
+    WRITE_DONE:
+      fsm_function = IDLE;
+
+    // 9
+    READ_DONE:
+      fsm_function = IDLE;
+
+    // 10
+    ERROR:
+        fsm_function = ERROR; // hangs until controller is reset
 
     default:
         fsm_function = IDLE;
@@ -137,34 +178,85 @@ endfunction
 always @ (posedge i_clk)
 begin : FSM_SEQ
   if(i_rst == 1'b1) begin
-    state <= IDLE;
+    current_state <= IDLE;
   end else begin
-    state <= next_state;
+    current_state <= next_state;
   end
 end
 
 //--------- Output logic ---------
 
-// o_bus_data,//(to bus) 
-// o_mem_data,//(to data mem)
-// o_mem_ecc, // maybe unused
-// o_err,     //(to bus)
-// o_ack      //(to bus)
+//
+//reg [31:0]      o_bus_data,//(to bus) 
+//reg [31:0]      o_mem_data,//(to data mem)
+//reg             o_mem_sel, //(to data mem)
+//wire            o_mem_we,  //(to data mem)
+//reg [7:0]       o_mem_ecc, // maybe unused
+//reg             o_err,     //(to bus)
+//reg             o_ack      //(to bus)
 
-assign o_ack = (current_state == IDLE) & i_sel;
-always @ (posedge clock)
-  begin : OUTPUT_LOGIC
+reg [31:0] word;
+
+always @ (posedge i_clk)
+begin : OUTPUT_LOGIC
   if (i_rst == 1'b1) begin
-    o_bus_data = 'b0;
-    o_mem_data = 'b0;
-    o_mem_ecc  = 'b0;
-    o_err      = 'b0;
+    o_bus_data <= 'b0;
+    o_mem_data <= 'b0;
+    o_mem_sel  <= 'b0;
+    o_mem_we   <= 'b0;
+    o_mem_ecc  <= 'b0;
+    o_err      <= 'b0;
+    o_ack      <= 'b0;
   end else begin
     case(current_state)
-    default : begin
-                     gnt_0 <=  #1  1'b0;
-                     gnt_1 <=  #1  1'b0;
-                   end
-   endcase
- end
+    IDLE: begin
+        o_err  <= 'b0;
+      end
+    WRITE: begin      
+        o_ack      <= 'b0;
+        o_mem_sel  <= 1'b1;
+        o_mem_we   <= 1'b1;
+        o_mem_data <= i_bus_data;
+      end
+    READ: begin
+        o_ack     <= 'b0;
+        o_mem_sel <= 1'b1;
+        o_mem_we  <= 1'b0;
+        word      <= i_mem_data;// save data in a temp register
+      end
+    WRITE_COMPLEMENT: begin
+        o_mem_sel  <= 1'b1;
+        o_mem_we   <= 1'b1;
+        o_mem_data <= ~word;// write the complement of the data in memory
+        //o_mem_ecc = ~ecc;// our parity check matrix ECC doesnt change with complemented words
+      end
+    WRITE_COMPLEMENT_DONE: begin
+        o_mem_sel = 1'b0;
+      end
+    READ_COMPLEMENT: begin
+        o_mem_sel  <= 1'b1;
+        o_mem_we   <= 1'b0;
+        word       <= ~i_mem_data;// write the complement of the data in memory
+        //ecc_compl <= ~i_mem_ecc;// our parity check matrix ECC doesnt change with complemented words
+      end
+    READ_COMPLEMENT_DONE: begin
+        o_mem_sel = 1'b0;
+      end
+    WRITE_CORRECTED: begin
+        o_mem_sel  <= 1'b1;
+        o_mem_we   <= 1'b1;
+        o_mem_data <= word;
+      end
+    WRITE_DONE: begin
+        o_mem_sel = 1'b0;
+      end
+    READ_DONE: begin
+        o_mem_sel  = 1'b0;
+        o_bus_data <= word;
+        o_ack      <= 1'b1;
+      end
+    endcase
+  end
 end // End Of Block OUTPUT_LOGIC
+
+endmodule
